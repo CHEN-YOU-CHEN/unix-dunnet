@@ -1,0 +1,30 @@
+s/^total [0-9]*/total 467/
+s/\([A-Z][a-z][a-z]\)  *[0-9][0-9]* [0-9][0-9]:[0-9][0-9]/Jan 1 1970/g
+s/\([A-Z][a-z][a-z]\)  \([0-9]\)  \([0-9][0-9][0-9][0-9]\)/\1 \2 \3/g
+s/^\(-\|d\)rwxrwxrwx/\1rwxr-xr-x/
+s/-rwxr-xr-x *[0-9]* *[^ ]* *[^ ]* *[0-9]* Jan 1 1970 paper\.o\.gz/-rwxr-xr-x  1 toukmond restricted        0 Jan 1 1970 paper.o.Z/
+/ \.$/{
+  s/.*/drwxr-xr-x  3 toukmond restricted      512 Jan 1 1970 ./
+}
+/ \.\.$/{
+  s/.*/drwxr-xr-x  3 root     staff          2048 Jan 1 1970 ../
+}
+/^drwxr-xr-x.*Jan 1 1970 [^ \.][^ ]*$/{
+  s/drwxr-xr-x *[0-9]* *[^ ]* *[^ ]* *[0-9]* Jan 1 1970 \(.*\)/drwxr-xr-x  3 root     staff           512 Jan 1 1970 \1/
+}
+/^lrwxrwxrwx/{
+  s/lrwxrwxrwx *[0-9]* *[^ ]* *[^ ]* *\([0-9]*\) Jan 1 1970 \(.*\)/lrwxrwxrwx  1 toukmond restricted       \1 Jan 1 1970 \2/
+}
+/^-rwxr-xr-x.*10423 Jan 1 1970/{
+  s/-rwxr-xr-x *[0-9]* *[^ ]* *[^ ]* *10423 Jan 1 1970 \(.*\)/-rwxr-xr-x  1 toukmond restricted    10423 Jan 1 1970 \1/
+}
+/^-rwxr-xr-x.*Jan 1 1970 .*\.o/{
+  s/-rwxr-xr-x *[0-9]* *[^ ]* *[^ ]* *[0-9]* Jan 1 1970 \(.*\)/-rwxr-xr-x  1 toukmond restricted        0 Jan 1 1970 \1/
+}
+/^-rwxr-xr-x.*Jan 1 1970/{
+  /10423/!{
+    /\.o/!{
+      s/-rwxr-xr-x *[0-9]* *[^ ]* *[^ ]* *[0-9]* Jan 1 1970 \(.*\)/-rwxr-xr-x  3 root     staff          2048 Jan 1 1970 \1/
+    }
+  }
+}

@@ -1,0 +1,608 @@
+#!/usr/bin/csh
+
+chmod -R 777 filesystem >& /dev/null
+rm -rf filesystem >& /dev/null
+tar --acls -xpf ~/filesystem.tar >& /dev/null
+
+cd filesystem/pokey/rooms/e-w-dirt-road
+ln -sf ../dead-end/coconuts coconuts >& /dev/null
+ln -sf ../dead-end/coconuts coconut >& /dev/null
+cd - >/dev/null
+
+set nonomatch
+set visited = ("filesystem/pokey/rooms/dead-end" "filesystem/pokey/rooms/hidden-area")
+set current = "filesystem/pokey/rooms/dead-end"
+set inventory = "filesystem/pokey/usr/toukmond"
+set items = "shovel boulder bear food key emerald bracelet card board cpu chip vax computer cabinet lamp paper bin bins trees tree palm coconut coconuts"
+
+if (-e "$current/description") cat "$current/description"
+if (-e "$current/.panel_description") cat "$current/.panel_description"
+
+ls --color=never "$current/"*.o >& /dev/null
+if ($status == 0) then
+	ls --color=never "$current/"*.o | sed \
+		-e 's|.*/shovel\.o|There is a shovel here.|' \
+		-e 's|.*/boulder\.o|There is a large boulder here.|' \
+		-e 's|.*/bear\.o|There is a ferocious bear here!|' \
+		-e 's|.*/food\.o|There is some food here.|' \
+		-e 's|.*/key\.o|There is a shiny brass key here.|' \
+		-e 's|.*/card\.o|There is a CPU card here.|' \
+		-e 's|.*/bracelet\.o|There is an emerald bracelet here.|' \
+		-e 's|.*/lamp\.o|There is a lamp nearby.|' \
+		-e 's|.*/paper\.o.*|There is a slip of paper here.|' \
+		-e '/.*board\.o/d' \
+		-e '/.*chip\.o/d' \
+		-e '/.*cpu\.o/d' \
+		-e '/.*emerald\.o/d'
+endif
+
+while(1)
+	echo -n ">"
+	set command = $<:q
+
+	set args = ( $command )
+	if( $#args == 0 ) continue
+	set cmd = $args[1]
+
+	if ("$cmd" == "exit" || "$cmd" == "quit") then
+		echo ""
+		echo "You have scored 0 out of a possible 90 points."
+		echo "%"
+		chmod -R 777 filesystem >& /dev/null
+		rm -rf filesystem >& /dev/null
+		exit 0
+	endif
+
+	if ("$cmd" == "e" || "$cmd" == "w" || "$cmd" == "n" || "$cmd" == "s" || "$cmd" == "ne" || "$cmd" == "nw" || "$cmd" == "se" || "$cmd" == "sw" || "$cmd" == "u" || "$cmd" == "d") then
+		if (-e "$current/$cmd") then
+			cd "$current/$cmd" >& /dev/null
+			set next_room = `pwd -P | sed 's|.*filesystem|filesystem|'`
+			cd - >/dev/null
+
+			if (! -r "$next_room") then
+				echo "You don't have a key that can open this door."
+				continue
+			endif
+
+			set current = $next_room
+
+			echo $visited | grep -q "$current"
+			if ($status == 0) then
+				head -1 "$current/description"
+			else
+				if (-e "$current/description") cat "$current/description"
+				set visited = ($visited "$current")
+			endif
+
+			if (-e "$current/.panel_description") cat "$current/.panel_description"
+
+			ls --color=never "$current/"*.o >& /dev/null
+			if ($status == 0) then
+				ls --color=never "$current/"*.o | sed \
+					-e 's|.*/shovel\.o|There is a shovel here.|' \
+					-e 's|.*/boulder\.o|There is a large boulder here.|' \
+					-e 's|.*/bear\.o|There is a ferocious bear here!|' \
+					-e 's|.*/food\.o|There is some food here.|' \
+					-e 's|.*/key\.o|There is a shiny brass key here.|' \
+					-e 's|.*/card\.o|There is a CPU card here.|' \
+					-e 's|.*/bracelet\.o|There is an emerald bracelet here.|' \
+					-e 's|.*/lamp\.o|There is a lamp nearby.|' \
+					-e 's|.*/paper\.o.*|There is a slip of paper here.|' \
+					-e '/.*board\.o/d' \
+					-e '/.*chip\.o/d' \
+					-e '/.*cpu\.o/d' \
+					-e '/.*emerald\.o/d'
+			endif
+		else
+			echo "You can't go that way."
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "l") then
+		if (-e "$current/description") cat "$current/description"
+		if (-e "$current/.panel_description") cat "$current/.panel_description"
+
+		ls --color=never "$current/"*.o >& /dev/null
+		if ($status == 0) then
+			ls --color=never "$current/"*.o | sed \
+				-e 's|.*/shovel\.o|There is a shovel here.|' \
+				-e 's|.*/boulder\.o|There is a large boulder here.|' \
+				-e 's|.*/bear\.o|There is a ferocious bear here!|' \
+				-e 's|.*/food\.o|There is some food here.|' \
+				-e 's|.*/key\.o|There is a shiny brass key here.|' \
+				-e 's|.*/card\.o|There is a CPU card here.|' \
+				-e 's|.*/bracelet\.o|There is an emerald bracelet here.|' \
+				-e 's|.*/lamp\.o|There is a lamp nearby.|' \
+				-e 's|.*/paper\.o.*|There is a slip of paper here.|' \
+				-e '/.*board\.o/d' \
+				-e '/.*chip\.o/d' \
+				-e '/.*cpu\.o/d' \
+				-e '/.*emerald\.o/d'
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "x") then
+		if ("$#args" < 2) then
+			echo "You must supply an object."
+			continue
+		endif
+
+		set target = $args[2]
+
+		echo "$items" | grep -q -w "$target"
+		if ($status != 0) then
+			echo "I don't know what that is."
+			continue
+		endif
+
+		if ("$target" == "cpu" || "$target" == "board" || "$target" == "chip") set target = "card"
+		if ("$target" == "emerald") set target = "bracelet"
+		if ("$target" == "cabinet" || "$target" == "vax") set target = "computer"
+
+		if (-e "$current/$target.o") then
+			cat "$current/$target.o"
+		else if (-e "$current/$target") then
+			cat "$current/$target"
+		else if (-e "$inventory/$target.o") then
+			cat "$inventory/$target.o"
+		else
+			echo "I don't see that here."
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "i") then
+		echo "You currently have:"
+		ls --color=never "$inventory/"*.o >& /dev/null
+		if ($status == 0) then
+			ls --color=never "$inventory/"*.o | sed \
+				-e 's|.*/shovel\.o|A shovel|' \
+				-e 's|.*/food\.o|Some food|' \
+				-e 's|.*/key\.o|A brass key|' \
+				-e 's|.*/card\.o|A computer board|' \
+				-e 's|.*/bracelet\.o|A bracelet|' \
+				-e 's|.*/lamp\.o|A lamp|' \
+				-e 's|.*/paper\.o.*|A slip of paper|' \
+				-e '/.*board\.o/d' \
+				-e '/.*chip\.o/d' \
+				-e '/.*cpu\.o/d' \
+				-e '/.*emerald\.o/d'
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "get") then
+		if ("$#args" < 2) then
+			echo "You must supply an object."
+			continue
+		endif
+		set target = $args[2]
+
+		if ("$target" == "all") then
+			ls --color=never "$current/"*.o >& /dev/null
+			if ($status == 0) then
+				set takeable = `ls --color=never "$current/"*.o | grep -vE 'boulder\.o|bear\.o'`
+				if ("$takeable" != "") then
+					ls --color=never "$current/"*.o | sed \
+						-e '/.*boulder\.o/d' \
+						-e '/.*bear\.o/d' \
+						-e 's|.*/shovel\.o|A shovel: Taken.|' \
+						-e 's|.*/food\.o|Some food: Taken.|' \
+						-e 's|.*/key\.o|A brass key: Taken.|' \
+						-e 's|.*/card\.o|A computer board: Taken.|' \
+						-e 's|.*/bracelet\.o|A bracelet: Taken.|' \
+						-e 's|.*/lamp\.o|A lamp: Taken.|' \
+						-e 's|.*/paper\.o.*|A slip of paper: Taken.|' \
+						-e '/.*board\.o/d' \
+						-e '/.*chip\.o/d' \
+						-e '/.*cpu\.o/d' \
+						-e '/.*emerald\.o/d'
+
+					foreach f (`ls --color=never "$current/"*.o`)
+						set fn = "`basename $f`"
+						if ("$fn" == "card.o") then
+							mv "$current/board.o" "$inventory/" >& /dev/null
+							rm -f "$current/card.o" "$current/cpu.o" "$current/chip.o" >& /dev/null
+							ln -sf ./board.o "$inventory/card.o" >& /dev/null
+							ln -sf ./board.o "$inventory/cpu.o" >& /dev/null
+							ln -sf ./board.o "$inventory/chip.o" >& /dev/null
+						else if ("$fn" == "bracelet.o") then
+							mv "$current/bracelet.o" "$inventory/" >& /dev/null
+							rm -f "$current/emerald.o" >& /dev/null
+							ln -sf ./bracelet.o "$inventory/emerald.o" >& /dev/null
+						else if ("$fn" != "boulder.o" && "$fn" != "bear.o" && "$fn" != "board.o" && "$fn" != "cpu.o" && "$fn" != "chip.o" && "$fn" != "emerald.o") then
+							mv "$f" "$inventory/" >& /dev/null
+						endif
+					end
+
+					if (-e "$inventory/key.o") then
+						chmod 755 filesystem/pokey/rooms/old-building-hallway >& /dev/null
+					endif
+				else
+					echo "Nothing to take."
+				endif
+			else
+				echo "Nothing to take."
+			endif
+			continue
+		endif
+
+		echo "$items" | grep -q -w "$target"
+		if ($status != 0) then
+			echo "I don't know what that is."
+			continue
+		endif
+
+		if ("$target" == "cpu" || "$target" == "board" || "$target" == "chip") set target = "card"
+		if ("$target" == "emerald") set target = "bracelet"
+
+		if (! -e "$current/$target.o" && ! -e "$current/$target") then
+			echo "I do not see that here."
+			continue
+		endif
+
+		if ("$target" == "boulder" || "$target" == "bear") then
+			echo "You cannot take that."
+			continue
+		endif
+		if ("$target" == "bin" || "$target" == "bins" || "$target" == "trees" || "$target" == "tree" || "$target" == "palm" || "$target" == "coconut" || "$target" == "coconuts") then
+			echo "You cannot take that."
+			continue
+		endif
+		if ("$target" == "vax" || "$target" == "computer" || "$target" == "cabinet") then
+			echo "You cannot take that."
+			continue
+		endif
+
+		if (-e "$current/$target.o") then
+			if ("$target" == "card") then
+				mv "$current/board.o" "$inventory/" >& /dev/null
+				rm -f "$current/card.o" "$current/cpu.o" "$current/chip.o" >& /dev/null
+				ln -sf ./board.o "$inventory/card.o" >& /dev/null
+				ln -sf ./board.o "$inventory/cpu.o" >& /dev/null
+				ln -sf ./board.o "$inventory/chip.o" >& /dev/null
+			else if ("$target" == "bracelet") then
+				mv "$current/bracelet.o" "$inventory/" >& /dev/null
+				rm -f "$current/emerald.o" >& /dev/null
+				ln -sf ./bracelet.o "$inventory/emerald.o" >& /dev/null
+			else
+				mv "$current/$target.o" "$inventory/" >& /dev/null
+			endif
+			echo "Taken."
+			if ("$target" == "key") chmod 755 filesystem/pokey/rooms/old-building-hallway >& /dev/null
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "drop") then
+		if ("$#args" < 2) then
+			echo "You must supply an object."
+			continue
+		endif
+		set target = $args[2]
+
+		if ("$target" == "all") then
+			echo "I don't know what that is."
+			continue
+		endif
+
+		echo "$items" | grep -q -w "$target"
+		if ($status != 0) then
+			echo "I don't know what that is."
+			continue
+		endif
+
+		if ("$target" == "cpu" || "$target" == "board" || "$target" == "chip") set target = "card"
+		if ("$target" == "emerald") set target = "bracelet"
+
+		if (-e "$inventory/$target.o") then
+			if ("$target" == "card") then
+				mv "$inventory/board.o" "$current/" >& /dev/null
+				rm -f "$inventory/card.o" "$inventory/cpu.o" "$inventory/chip.o" >& /dev/null
+				ln -sf ./board.o "$current/card.o" >& /dev/null
+				ln -sf ./board.o "$current/cpu.o" >& /dev/null
+				ln -sf ./board.o "$current/chip.o" >& /dev/null
+			else if ("$target" == "bracelet") then
+				mv "$inventory/bracelet.o" "$current/" >& /dev/null
+				rm -f "$inventory/emerald.o" >& /dev/null
+				ln -sf ./bracelet.o "$current/emerald.o" >& /dev/null
+			else
+				mv "$inventory/$target.o" "$current/" >& /dev/null
+			endif
+			echo "Done."
+
+			if ("$target" == "key") chmod 000 filesystem/pokey/rooms/old-building-hallway >& /dev/null
+
+			if ("$target" == "food") then
+				set cur_base = `basename "$current"`
+				if ("$cur_base" == "bear-hangout") then
+					if (-e "$current/bear.o" && -e "$current/food.o") then
+						echo "The bear takes the food and runs away with it. He left something behind."
+						rm -f "$current/bear.o" "$current/food.o" >& /dev/null
+						mv "$current/.key.o" "$current/key.o" >& /dev/null
+					endif
+				endif
+			endif
+		else
+			echo "You don't have that."
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "dig") then
+		if (-e "$inventory/shovel.o") then
+			set cur_base = `basename "$current"`
+			if ("$cur_base" == "fork") then
+				if (-e "$current/.board.o") then
+					echo "I think you found something."
+					mv "$current/.board.o" "$current/board.o" >& /dev/null
+					rm -f "$current/.card.o" "$current/.cpu.o" "$current/.chip.o" >& /dev/null
+					ln -sf ./board.o "$current/card.o" >& /dev/null
+					ln -sf ./board.o "$current/cpu.o" >& /dev/null
+					ln -sf ./board.o "$current/chip.o" >& /dev/null
+				else
+					echo "Digging here reveals nothing."
+				endif
+			else
+				echo "Digging here reveals nothing."
+			endif
+		else
+			echo "You have nothing with which to dig."
+		endif
+		continue
+	endif
+
+	if ("$cmd" == "put") then
+		if ($#args < 4) then
+			echo "I don't know how to do that."
+			continue
+		endif
+
+		set target = $args[2]
+		set in = $args[3]
+		set dest = $args[4]
+
+		echo "$items" | grep -q -w "$target"
+		if ($status != 0) then
+			echo "I don't know what that is."
+			continue
+		endif
+
+		if ("$target" == "cpu" || "$target" == "board" || "$target" == "chip") set target = "card"
+		if ("$target" == "emerald") set target = "bracelet"
+
+		if ("$in" != "in") then
+			echo "Put it where?"
+			continue
+		endif
+
+		if (! -e "$inventory/$target.o") then
+			echo "You don't have that."
+			continue
+		endif
+
+		if ("$dest" == "vax" || "$dest" == "computer" || "$dest" == "cabinet") then
+			set cur_base = `basename "$current"`
+			if ("$cur_base" == "computer-room") then
+				if ("$target" == "card") then
+					echo "As you put the CPU board in the computer, it immediately springs to life."
+					echo "The lights start flashing, and the fans seem to startup."
+					mv "$inventory/board.o" "$current/.board.o" >& /dev/null
+					rm -f "$inventory/card.o" "$inventory/cpu.o" "$inventory/chip.o" >& /dev/null
+					touch "$current/.vax_on"
+					echo "The panel lights are flashing in a seemingly organized pattern." > "$current/.panel_description"
+					continue
+				else
+					echo "I don't know how to combine those objects.  Perhaps you should"
+					echo "just try dropping it."
+					continue
+				endif
+			else
+				echo "That indirect object is not here."
+				continue
+			endif
+		endif
+
+		if ("$dest" == "boulder") then
+			if (! -e "$current/boulder.o") then
+				echo "That indirect object is not here."
+			else
+				echo "I don't know how to combine those objects.  Perhaps you should"
+				echo "just try dropping it."
+			endif
+			continue
+		endif
+
+		if ("$dest" == "bin" || "$dest" == "bins") then
+			set cur_base = `basename "$current"`
+			if ("$cur_base" != "mailroom") then
+				echo "That indirect object is not here."
+			else
+				echo "I don't know how to combine those objects.  Perhaps you should"
+				echo "just try dropping it."
+			endif
+			continue
+		endif
+
+		if (! -e "$current/$dest" && ! -e "$current/$dest.o" && ! -e "$inventory/$dest.o") then
+			echo "That indirect object is not here."
+			continue
+		endif
+
+		echo "I don't know how to combine those objects.  Perhaps you should"
+		echo "just try dropping it."
+		continue
+	endif
+
+	if ("$cmd" == "type") then
+		set cur_base = `basename "$current"`
+		if ("$cur_base" != "computer-room") then
+			echo "There is nothing here on which you could type."
+			continue
+		endif
+		if (! -e "$current/.vax_on") then
+			echo "You type on the keyboard, but your characters do not even echo."
+			continue
+		endif
+
+		if (-e "$current/.vax_logged_in") then
+			set pokey_cwd = "filesystem/pokey/usr/toukmond"
+			set fake_cwd = "/usr/toukmond"
+			goto pokey_shell
+		endif
+
+		set login_attempts = 0
+		login_prompt:
+			echo ""
+			echo "UNIX System V, Release 2.2 (pokey)"
+			echo ""
+			echo -n "login: "
+			set login_name = $<:q
+			echo "$login_name"
+			echo -n "password: "
+			set login_pass = $<:q
+			echo "$login_pass"
+
+			if ("$login_name" != "toukmond" || "$login_pass" != "robert") then
+				echo "login incorrect"
+				@ login_attempts++
+				if ($login_attempts < 3) goto login_prompt
+				continue
+			endif
+
+		touch "$current/.vax_logged_in"
+		echo ""
+		echo "Welcome to Unix"
+		echo ""
+		echo "Please clean up your directories.  The filesystem is getting full."
+		echo "Our tcp/ip link to gamma is a little flaky, but seems to work."
+		echo "The current version of ftp can only send files from your home"
+		echo "directory, and deletes them after they are sent!  Be careful."
+		echo ""
+		echo "Note: Restricted bourne shell in use."
+		echo ""
+
+		set pokey_cwd = "filesystem/pokey/usr/toukmond"
+		set fake_cwd = "/usr/toukmond"
+
+		pokey_shell:
+		while (1)
+			echo -n "$ "
+			set tcommand = $<:q
+			echo "$tcommand"
+			set targs = ( $tcommand )
+			if ($#targs == 0) continue
+			set tcmd = $targs[1]
+
+			if ("$tcmd" == "exit") then
+				echo ""
+				echo "You step back from the console."
+				echo ""
+				break
+
+			else if ("$tcmd" == "ls") then
+				env LC_ALL=C ls --color=never -laS --group-directories-first "$pokey_cwd" | \
+					grep -vE ' (e|w|n|s|ne|nw|se|sw|trees|tree|palm|coconut|coconuts|bin|bins|computer|vax|cabinet)$' | \
+					sed -f PA.sedfile
+
+			else if ("$tcmd" == "pwd") then
+				echo "$fake_cwd"
+
+			else if ("$tcmd" == "cd") then
+				if ($#targs == 1) then
+					set pokey_cwd = "filesystem/pokey/usr/toukmond"
+					set fake_cwd = "/usr/toukmond"
+				else
+					set cd_target = "$targs[2]"
+
+					if ("$cd_target" =~ /*) then
+						set real_path = "filesystem/pokey$cd_target"
+						if (-d "$real_path") then
+							cd "$real_path" >& /dev/null
+							set pokey_cwd = `pwd | sed 's|.*filesystem|filesystem|'`
+							set fake_cwd = `echo "$pokey_cwd" | sed 's|filesystem/pokey||'`
+							cd - >/dev/null
+						else
+							echo "${cd_target}: No such file or directory"
+						endif
+
+					else if ("$cd_target" == "..") then
+						set parent = `dirname "$pokey_cwd"`
+						if (-d "$parent") then
+							set pokey_cwd = "$parent"
+							set fake_cwd = `echo "$pokey_cwd" | sed 's|filesystem/pokey||; s|^$|/|'`
+						endif
+
+					else
+						set real_path = "$pokey_cwd/$cd_target"
+						if (-d "$real_path") then
+							cd "$real_path" >& /dev/null
+							set pokey_cwd = `pwd | sed 's|.*filesystem|filesystem|'`
+							set fake_cwd = `echo "$pokey_cwd" | sed 's|filesystem/pokey||; s|^$|/|'`
+							cd - >/dev/null
+						else
+							echo "${cd_target}: No such file or directory"
+						endif
+					endif
+				endif
+
+			else if ("$tcmd" == "cat") then
+				if ($#targs < 2) then
+					echo "File not found."
+					continue
+				endif
+				set cat_target = "$targs[2]"
+
+				if ("$cat_target" =~ */*) then
+					echo "File not found."
+				else if (-e "$pokey_cwd/$cat_target") then
+					if ("$cat_target" == "cat" || "$cat_target" == "cd" || "$cat_target" == "echo" || "$cat_target" == "exit" || "$cat_target" == "ftp" || "$cat_target" == "ls" || "$cat_target" == "pwd" || "$cat_target" == "rlogin" || "$cat_target" == "ssh" || "$cat_target" == "uncompress" || "$cat_target" == "paper.o.gz" || "$cat_target" == "paper.o.Z") then
+						echo "Ascii files only."
+					else
+						cat "$pokey_cwd/$cat_target"
+					endif
+				else
+					echo "File not found."
+				endif
+
+			else if ("$tcmd" == "uncompress") then
+				if ($#targs < 2) then
+					echo "uncompress: No such file or directory"
+					continue
+				endif
+				set unc_target = "$targs[2]"
+				if ("$unc_target" == "paper.o.Z" || "$unc_target" == "paper.o.gz") then
+					if (-e "$pokey_cwd/paper.o.gz") then
+						cp "$pokey_cwd/paper.o.gz" "$pokey_cwd/paper.o.Z.gz" >& /dev/null
+						gunzip -f "$pokey_cwd/paper.o.Z.gz" >& /dev/null
+						mv "$pokey_cwd/paper.o.Z" "$pokey_cwd/paper.o" >& /dev/null
+						touch "$pokey_cwd/paper.o" >& /dev/null
+					else if (-e "$pokey_cwd/paper.o") then
+					else
+						echo "uncompress: No such file or directory"
+					endif
+				else if (-e "$pokey_cwd/$unc_target") then
+					echo "uncompress: cannot uncompress $unc_target"
+				else
+					echo "uncompress: No such file or directory"
+				endif
+
+			else
+				echo "${tcmd}: not found."
+			endif
+		end
+		continue
+	endif
+
+	if ("$cmd" == "north" || "$cmd" == "south" || "$cmd" == "east" || "$cmd" == "west" || "$cmd" == "northeast" || "$cmd" == "northwest" || "$cmd" == "southeast" || "$cmd" == "southwest") then
+		echo "You can't go that way."
+		continue
+	endif
+
+	echo "I don't understand that."
+end
+
+chmod -R 777 filesystem >& /dev/null
+rm -rf filesystem >& /dev/null
